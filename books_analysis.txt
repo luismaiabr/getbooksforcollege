@@ -1,0 +1,214 @@
+=== LISTA DE LIVROS ===
+  [11WE0Yoss83Fh3WatCe2lXqERIPiuE2yn]  Distributed Systems - Tanenbaum
+  [1AT2hniVxNJq5dFGj_jDDwh-kq071_z5N]   Designing Data-Intensive Applications [Kleppmann]
+  [1tPALTHwV4lV13S_D5TpQjf79aa-Qj8zD]  Alireza-Parandeh-Building-Generative-AI-Services-with-FastAPI-_for-True-Epub_-_2025_-O_Reilly-Media_
+  [1TOKujdv-IWkkWCpdOnazLW-y0JBIDyGE]  Introduction to Modern Statistics
+  [1i7-gaeNpOnpdvNEY9AJzBpXc0IY-4LxQ]  LOGICA PARTE 2 - NUNES
+  [1-kmmfrUV_k5fo10l5r2XZyXgQZqDNm59]  LOGICA PARTE 1
+  [1XXGa4Dbn98h-APB3Iz2CfAyxy3s483kt]  seguir_Jesus,projeto_de_vida_-_semeadores_da_palavra inverted
+  [1Cz23USHstp_2cJJZvoWnl6vgYPcI8mh-]  Lutz M. - Learning Python, 5th Edition (2013, O'Reilly) - libgen.li
+  [14kuj1NzuclobKWhjZWpNUbPFJP7m7uzN]  POSTGRESQL
+  [1zwdNxyWSZKnK1uyHpU71Wob_NLIL2xid]  MAT COMP
+  [1GBgiGRth4nfXW5aytSMqFBKn3gES_qht]  David Sale - Testing Python_ Applying Unit Testing, TDD, BDD and Acceptance Testing (2014, Wiley) - libgen.li
+  [1l-YdOI_D10W6vYQg22sqSa2zwpFvSHib]  POSTGRESQL (Copy)
+  [1J0_5qGl1YmgZ0HtU-QpRXt1GUWBb4N6G]  Pesquisa Operacional 170: Aplicações em Estratégia, Finanças, Logística, Produção, Marketing e Vendas (2ª Edição) — Amostra de Livro
+  [1vDOqgpZluZHEwQw0ICQYMhzxzI2fiGEq]  TESTES
+  [1EMOK0NEj4U0t6yXJAq67hYcEUhA4FNxO]  Small Business Management CUSTOMER RELATIONSHIPS
+
+=== CONTEÚDO (páginas 1-3 de cada livro) ===
+--- Distributed Systems - Tanenbaum [11WE0Yoss83Fh3WatCe2lXqERIPiuE2yn] ---
+  pag 1: D IS TRI B U T ED
+SY ST EM S
+MAARTEN VAN STEEN
+ANDREW S. TANENBAUM
+4TH EDITION
+VERSION 01
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Stud
+  pag 2: Cover art by Max van Steen
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studi
+  pag 3: DISTRIBUTED SYSTEMS
+Fourth edition
+Version 4.01
+(January 2023)
+Maarten van Steen
+Andrew S. Tanenbaum
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xo
+
+---  Designing Data-Intensive Applications [Kleppmann] [1AT2hniVxNJq5dFGj_jDDwh-kq071_z5N] ---
+  pag 3: 978-1-491-90309-4
+[FILL IN]
+Designing Data-Intensive Applications
+by Martin Kleppmann
+Copyright © 2016 Martin Kleppmann. All rights reserved.
+Printed in the United States of America.
+Published by O’Reilly Media, Inc. , 1005 Gravenstein Highway North, Sebastopol, CA 95472.
+O’Reilly books may be purch
+
+--- Alireza-Parandeh-Building-Generative-AI-Services-with-FastAPI-_for-True-Epub_-_2025_-O_Reilly-Media_ [1tPALTHwV4lV13S_D5TpQjf79aa-Qj8zD] ---
+  pag 2: Praise for Building Generative AI
+Services with FastAPI
+A masterclass in turning cutting-edge AI into real-world impact. Ali
+distills the complexity of generative models and FastAPI into an
+approachable, empowering guide for builders at every level.
+—Alan King, founder, AI Your Org
+A must-have for s
+  pag 3: A practical introduction to generative AI with valuable insights on
+building real-world services. This book is a good starting point for
+aspiring AI developers.
+—Julian Brendel, senior Python developer, Vitol
+The book is well-structured, and the way it presents the topics gives
+you a solid foundatio
+
+--- Introduction to Modern Statistics [1TOKujdv-IWkkWCpdOnazLW-y0JBIDyGE] ---
+  pag 1: Introduction to Modern Statistics (2e)
+  pag 2: ii
+Table of contents
+Preface
+4
+I
+Introduction to data
+8
+1
+Hello data
+10
+1.1
+Case study: Using stents to prevent strokes . . . . . . . . . . . . . . . . . . . . . . . .
+10
+1.2
+Data basics . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+12
+1.3
+Chapter review . . . .
+  pag 3: TABLE OF CONTENTS
+iii
+6
+Applications: Explore
+96
+6.1
+Case study: Effective communication of exploratory results
+. . . . . . . . . . . . . . .
+96
+6.2
+Interactive R tutorials . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+102
+6.3
+R labs . . . . . . . . . . . . . . . . . . . . 
+
+--- LOGICA PARTE 2 - NUNES [1i7-gaeNpOnpdvNEY9AJzBpXc0IY-4LxQ] ---
+  pag 1: LÓGICA para CIÊNCIA da
+COMPUTAÇÃO e ÁREAS AFINS
+Uma introdução concisa sobre os
+fundamentos da Lógica
+JOÃO NUNES de SOUZA
+11 de setembro de 2020
+  pag 2: Importante mesmo são as pessoas.
+Por elas, trabalhamos, pensamos e sonhamos.
+Nanci, João Paulo e Tiago.
+Minha mais importante lógica.
+i
+  pag 3: PREFÁCIO
+A Lógica e o nosso contexto. O que é Lógica? Por que estudar Lógica? Qual a
+sua denição? Ao iniciar este estudo, vários autores apresentam denições populares
+sobre o tema. Por exemplo, conforme [Mendelson]: Lógica é a análise de métodos
+de raciocínio. No estudo desses métodos a Lógica est
+
+--- LOGICA PARTE 1 [1-kmmfrUV_k5fo10l5r2XZyXgQZqDNm59] ---
+
+--- seguir_Jesus,projeto_de_vida_-_semeadores_da_palavra inverted [1XXGa4Dbn98h-APB3Iz2CfAyxy3s483kt] ---
+  pag 1: Seguir Jesus: O ma
+                                                    
+SEMEADORES DA PALAVRA BY
+D i g
+D i g
+D i g
+D i g
+http:/
+Em O Mais Fascinante Projeto 
+Temos, isto sim, uma exposiçã
+um discípulo dos ensinos e, es
+quem,tem coragem para faz
+aprendera muito com e
+ais fascinante projeto de vida –C
+  pag 2: Seguir Jesus: O mais fascinante projeto de vida –Caio Fábio 
+                                                                                                                                                                                                             
+SEMEADORES DA PALAVRA BY Karmitta
+  pag 3: Seguir Jesus: O mais fascinante projeto de vida –Caio Fábio 
+                                                                                                                                                                                                             
+SEMEADORES DA PALAVRA BY Karmitta
+
+--- Lutz M. - Learning Python, 5th Edition (2013, O'Reilly) - libgen.li [1Cz23USHstp_2cJJZvoWnl6vgYPcI8mh-] ---
+  pag 3: FIFTH EDITION
+Learning Python
+Mark Lutz
+Beijing • Cambridge • Farnham • Köln • Sebastopol • Tokyo
+
+--- POSTGRESQL [14kuj1NzuclobKWhjZWpNUbPFJP7m7uzN] ---
+  pag 1: Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+  pag 2: PostgreSQL: Up and Running
+THIRD EDITION
+A Practical Guide to the Advanced Open Source Database
+Regina O. Obe and Leo S. Hsu
+2
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+  pag 3: Editor: Andy Oram
+Production Editor: Melanie Yarbrough
+Copyeditor: Kim Cofer
+Proofreader: Christina Edwards
+Indexer: Lucie Haskins
+Interior Designer: David Futato
+Cover Designer: Karen Montgomery
+Illustrator: Rebecca Demarest
+October 2017: Third Edition
+Revision History for the Third Edition
+2017-10
+
+--- MAT COMP [1zwdNxyWSZKnK1uyHpU71Wob_NLIL2xid] ---
+  pag 1: This International Student Edition is for use outside of the U.S.
+LIEBERMAN
+HILLIER
+Frederick S.
+Gerald J.
+Operations Research
+Introduction to
+ELEVENTH EDITION
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo 
+  pag 2: INTRODUCTION TO 
+OPERATIONS RESEARCH
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+  pag 3: Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+Created by Xodo PDF Studio. Learn more at xodo.com/pdf-studio
+
+--- David Sale - Testing Python_ Applying Unit Testing, TDD, BDD and Acceptance Testing (2014, Wiley) - libgen.li [1GBgiGRth4nfXW5aytSMqFBKn3gES_qht] ---
+  ERRO: HTTP Error 502: Bad Gateway
+
+--- POSTGRESQL (Copy) [1l-YdOI_D10W6vYQg22sqSa2zwpFvSHib] ---
+  ERRO: HTTP Error 502: Bad Gateway
+
+--- Pesquisa Operacional 170: Aplicações em Estratégia, Finanças, Logística, Produção, Marketing e Vendas (2ª Edição) — Amostra de Livro [1J0_5qGl1YmgZ0HtU-QpRXt1GUWBb4N6G] ---
+  ERRO: HTTP Error 502: Bad Gateway
+
+--- TESTES [1vDOqgpZluZHEwQw0ICQYMhzxzI2fiGEq] ---
+  ERRO: HTTP Error 502: Bad Gateway
+
+--- Small Business Management CUSTOMER RELATIONSHIPS [1EMOK0NEj4U0t6yXJAq67hYcEUhA4FNxO] ---
+  ERRO: HTTP Error 502: Bad Gateway
+
