@@ -38,6 +38,11 @@ poetry run uvicorn main:app --reload --port 8000
 
 Interactive docs: `http://localhost:8000/docs`
 
+### MCP Integration
+
+This project includes a fully functional Model Context Protocol (`mcp`) server, letting AI Agents interact with all endpoints directly.
+Read the [MCP documentation in `mcp/README.md`](mcp/README.md) for how to use it.
+
 ---
 
 ## Environment Variables (`.env`)
@@ -261,6 +266,7 @@ temp/
 | Concern | Library |
 |---|---|
 | API framework | FastAPI + uvicorn |
+| Model Context Protocol | `mcp`, `FastMCP` |
 | Google Drive | google-api-python-client + google-auth |
 | PDF text extraction | PyMuPDF (`fitz`) |
 | PDF page slicing | pypdf |

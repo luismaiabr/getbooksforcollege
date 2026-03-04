@@ -33,11 +33,19 @@ async def renaming_loop():
                     if not pdf_path.exists() or pdf_path.stat().st_size == 0:
                         try:
                             drive.download_book(file_id, pdf_path)
+                        except FileNotFoundError:
+                            print(f"[Renamer] Book '{original_drive_name}' was deleted from Drive — skipping.")
+                            continue
                         except Exception as exc:
                             print(f"[Renamer] Drive download error for {original_drive_name}: {exc}")
                             continue
                     try:
-                        pdf_processor.build_content_json(local_name, pdf_path, content_path)
+                        loop = asyncio.get_running_loop()
+                        await loop.run_in_executor(
+                            None, 
+                            pdf_processor.build_content_json, 
+                            local_name, pdf_path, content_path
+                        )
                     except Exception as exc:
                         print(f"[Renamer] PDF parse error for {original_drive_name}: {exc}")
                         continue

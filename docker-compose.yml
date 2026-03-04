@@ -1,0 +1,38 @@
+services:
+  bookgateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bookgateway
+    restart: unless-stopped
+
+    ports:
+      - "8000:8000"   # FastAPI
+      - "8001:8001"   # MCP SSE
+
+    env_file:
+      - .env
+
+    environment:
+      # Override cache path to the Docker volume mount point
+      BOOKS_CACHE_DIR: /data/complete_books
+
+    volumes:
+      # Persistent book cache (PDFs, content.json, excerpts)
+      - books_cache:/data/complete_books
+      # OAuth token (persisted so we don't re-auth on every restart)
+      - ./token.json:/app/token.json
+      # OAuth credentials (read-only; never changes)
+      - ./credentials.json:/app/credentials.json:ro
+
+    healthcheck:
+      test: ["CMD", "python3", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/books')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  books_cache:
+    driver: local

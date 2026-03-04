@@ -1,41 +1,15 @@
 """FastAPI Book Gateway — entry point."""
 
 import asyncio
-import threading
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
 from routers import books, content, jobs
-from services import cache, drive, pdf_processor, renamer_job
+from services import cache, drive, pdf_processor, renamer_job, preprocessor
 
 
-def _process_all_books_task() -> None:
-    """Background task that downloads and extracts text for all books if missing."""
-    print("Background pre-computation started...")
-    try:
-        drive_books = drive.list_books()
-        for b in drive_books:
-            book_name = b["name"]
-            pdf_path = cache.get_pdf_path(book_name)
-            content_path = cache.get_content_path(book_name)
 
-            if not (content_path.exists() and content_path.stat().st_size > 0):
-                print(f"Pre-computing missing content for: {book_name}")
-                if not pdf_path.exists() or pdf_path.stat().st_size == 0:
-                    try:
-                        drive.download_book(b["id"], pdf_path)
-                    except Exception as exc:
-                        print(f"Failed to download {book_name}: {exc}")
-                        continue
-                try:
-                    pdf_processor.build_content_json(book_name, pdf_path, content_path)
-                    print(f"Successfully processed {book_name}")
-                except Exception as exc:
-                    print(f"Failed to parse {book_name}: {exc}")
-    except Exception as exc:
-        print(f"Background task failed: {exc}")
-    print("Background pre-computation finished.")
 
 
 @asynccontextmanager
@@ -48,16 +22,14 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         print(f"Failed to authenticate with Google Drive: {exc}")
 
-    # Start the processing function in a daemon thread so it doesn't block FastAPI startup
-    thread = threading.Thread(target=_process_all_books_task, daemon=True)
-    thread.start()
-    
-    # Start the async LLM renaming loop
+    # Start the async LLM renaming loop and the async content extraction loop
+    preprocessor_task = asyncio.create_task(preprocessor.content_extraction_loop())
     renamer_task = asyncio.create_task(renamer_job.renaming_loop())
     
     yield
     
     # Teardown
+    preprocessor_task.cancel()
     renamer_task.cancel()
 
 

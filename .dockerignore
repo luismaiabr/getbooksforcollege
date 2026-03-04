@@ -1,0 +1,36 @@
+# Version control
+.git
+.gitignore
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.pyo
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local secrets (mounted at runtime, never baked in)
+.env
+token.json
+
+# Local book cache (mounted as volume)
+../temp/
+
+# Editor / OS noise
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# Docs and test scripts (not needed at runtime)
+README.md
+books_analysis.txt
+test_api.sh
+debug_drive.py
+mcp/README.md
+mcp/howtouse.md

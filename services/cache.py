@@ -1,10 +1,13 @@
 """Manages the temp/complete_books/ cache directory."""
 
 import json
+import os
 from pathlib import Path
 
-# Absolute path to temp folder (one level up from the project root)
-BASE = Path(__file__).resolve().parents[2] / "temp" / "complete_books"
+# Allow overriding the cache location via env var (used in Docker).
+# Falls back to the original path (../../temp/complete_books) for local dev.
+_env_cache = os.getenv("BOOKS_CACHE_DIR")
+BASE = Path(_env_cache) if _env_cache else Path(__file__).resolve().parents[2] / "temp" / "complete_books"
 
 
 # ── Path helpers ──────────────────────────────────────────────────────────────
