@@ -34,16 +34,19 @@ echo "FastAPI  → http://${FASTAPI_HOST}:${FASTAPI_PORT}"
 echo "MCP SSE  → http://${MCP_SERVER_ADDRESS}:${MCP_SERVER_PORT}/sse"
 echo ""
 
-# Inside Docker we must bind to 0.0.0.0 and skip --reload
+# Inside Docker, Poetry is not installed — packages are on the system PATH.
+# Locally, use `poetry run` to pick up the virtualenv.
 if [ "${DOCKER_ENV:-0}" = "1" ]; then
     FASTAPI_HOST="0.0.0.0"
     RELOAD_FLAG=""
+    RUN_PREFIX=""
 else
     RELOAD_FLAG="--reload"
+    RUN_PREFIX="poetry run"
 fi
 
-# Start FastAPI via Poetry's virtualenv
-poetry run uvicorn main:app \
+# Start FastAPI
+$RUN_PREFIX uvicorn main:app \
     --host "$FASTAPI_HOST" \
     --port "$FASTAPI_PORT" \
     $RELOAD_FLAG &
@@ -53,8 +56,8 @@ echo "[FastAPI] started (PID $FASTAPI_PID)"
 # Give FastAPI a moment to bind before MCP tries to connect
 sleep 2
 
-# Start MCP SSE server via Poetry's virtualenv
-poetry run python3 mcp/server.py &
+# Start MCP SSE server
+$RUN_PREFIX python3 mcp/server.py &
 MCP_PID=$!
 echo "[MCP]     started (PID $MCP_PID)"
 
