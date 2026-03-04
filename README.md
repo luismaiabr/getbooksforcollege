@@ -29,13 +29,41 @@ Services
 
 ---
 
-## Running
+## Running (Docker Compose)
 
+The recommended way to run the Book Gateway is using **Docker Compose**. This handles the FastAPI server, the MCP server, and the asynchronous background workers (for PDF processing and renaming).
+
+### 1. Build and Start
 ```bash
-# From the project root (WSL or Linux):
+sudo docker compose up --build -d
+```
+The API is exposed on host port **8080**.  
+Interactive docs: `http://localhost:8080/docs`  
+Health check: `http://localhost:8080/health`
+
+### 2. Management Commands
+| Action | Command |
+| :--- | :--- |
+| **Restart App** | `sudo docker compose restart bookgateway` |
+| **Stop & Remove** | `sudo docker compose down` |
+| **View Live Logs** | `sudo docker compose logs -f bookgateway` |
+| **Check Health** | `curl -i http://localhost:8080/health` |
+
+### 3. Google Drive Authentication (Headless)
+Inside Docker, you must provide a `token.json` manually once:
+1. **Generate locally:** Run `poetry run python3 scripts/generate_token.py` on a machine with a browser.
+2. **Inject into Docker:** `docker cp token.json bookgateway:/app/token_store/token.json`
+3. **Restart:** `sudo docker compose restart bookgateway`
+
+---
+
+## Local Development (Manual)
+
+If you prefer to run outside of Docker:
+```bash
+# From the project root:
 poetry run uvicorn main:app --reload --port 8000
 ```
-
 Interactive docs: `http://localhost:8000/docs`
 
 ### MCP Integration

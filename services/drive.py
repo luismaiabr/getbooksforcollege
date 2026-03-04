@@ -6,7 +6,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
@@ -18,34 +17,42 @@ GOOGLE_DRIVE_FOLDER_ID = (os.getenv("GOOGLE_DRIVE_FOLDER_ID") or "").strip()
 
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 
-# Path to the credentials and token files (assuming they're in the project root)
+# Path to the credentials and token files
 CREDS_DIR = Path(__file__).resolve().parents[1]
-TOKEN_PATH = CREDS_DIR / "token.json"
+# Inside Docker: token lives in the named-volume directory /app/token_store
+# Locally:       token lives alongside credentials.json in the project root
+if os.getenv("DOCKER_ENV") == "1":
+    TOKEN_PATH = Path("/app/token_store/token.json")
+else:
+    TOKEN_PATH = CREDS_DIR / "token.json"
 CREDENTIALS_PATH = CREDS_DIR / "credentials.json"
 
 
 def _get_drive_service():
-    """Authenticate via OAuth 2.0 to get full read/write access."""
+    """Authenticate via OAuth 2.0 to get full read/write access.
+
+    Requires a valid token.json to already exist (generated outside of Docker
+    via the one-time local setup script). Token refresh is handled automatically.
+    This function will NEVER attempt to open a browser — it is headless-safe.
+    """
     creds = None
-    if TOKEN_PATH.exists():
+    if TOKEN_PATH.exists() and TOKEN_PATH.stat().st_size > 0:
         creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
-    
-    # If there are no (valid) credentials available, let the user log in.
+
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
+            # Headless-safe: refresh the token using the stored refresh_token
             creds.refresh(Request())
+            with open(TOKEN_PATH, "w") as token:
+                token.write(creds.to_json())
         else:
-            if not CREDENTIALS_PATH.exists():
-                raise FileNotFoundError(
-                    f"OAuth credentials not found at {CREDENTIALS_PATH}. "
-                    "Please download OAuth 2.0 Desktop credentials from Google Cloud Console "
-                    "and place them there."
-                )
-            flow = InstalledAppFlow.from_client_secrets_file(str(CREDENTIALS_PATH), SCOPES)
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open(TOKEN_PATH, "w") as token:
-            token.write(creds.to_json())
+            raise RuntimeError(
+                f"No valid Google OAuth token found at {TOKEN_PATH}.\n"
+                "Run the one-time local auth script to generate it:\n\n"
+                "  python scripts/generate_token.py\n\n"
+                "Then copy the produced token.json into the Docker volume:\n"
+                "  docker cp token.json bookgateway:/app/token_store/token.json"
+            )
 
     return build("drive", "v3", credentials=creds)
 

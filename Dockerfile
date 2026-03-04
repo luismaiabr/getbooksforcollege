@@ -1,50 +1,49 @@
-# ── Stage 1: dependency builder ───────────────────────────────────────────────
-FROM python:3.12-slim AS builder
+# ── Stage: full build using Poetry ────────────────────────────────────────
+FROM python:3.12-slim AS base
 
-# Build-time system deps (compilers, headers for pymupdf etc.)
+# Install system build dependencies (compilers, libglib2.0-0 for pymupdf, etc.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         libglib2.0-0 \
+        curl \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /build
-
-# Copy manifests first for layer-cache efficiency
-COPY pyproject.toml poetry.lock ./
-
-# Install directly from pyproject.toml into a prefix we can copy over.
-# pip understands PEP 621 [project] natively — no Poetry needed.
-RUN pip install --no-cache-dir --prefix=/install .
-
-
-# ── Stage 2: runtime image ────────────────────────────────────────────────────
-FROM python:3.12-slim AS runtime
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Non-root user for security
-RUN useradd --create-home --shell /bin/bash appuser
+# Install Poetry – try system /usr/bin/poetry first, otherwise install via the official installer
+# The installer puts Poetry in /opt/poetry and we symlink it to /usr/local/bin/poetry
+RUN if [ -x /usr/bin/poetry ]; then \
+        ln -s /usr/bin/poetry /usr/local/bin/poetry; \
+    else \
+        curl -sSL https://install.python-poetry.org | python3 - && \
+        ln -s $HOME/.local/bin/poetry /usr/local/bin/poetry; \
+    fi
 
 WORKDIR /app
 
-# Pull only the installed packages from the builder (no compilers in runtime)
-COPY --from=builder /install /usr/local
+# Copy only the manifests – Poetry will resolve and install all deps
+COPY pyproject.toml poetry.lock ./
 
-# Copy application source
+# In‑container installs should go straight to the system Python (no venv)
+ENV POETRY_VIRTUALENVS_CREATE=false \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_NO_ANSI=1
+
+# Install runtime dependencies (no dev deps, no package itself)
+RUN poetry install --only main --no-root
+
+# Copy the rest of the source code
 COPY . .
 
-# Tell cache.py and start.sh where we are
+# Environment for the app – tell start.sh we are inside Docker
 ENV BOOKS_CACHE_DIR=/data/complete_books \
     DOCKER_ENV=1
 
-# Prepare the cache mount point with correct ownership
-RUN mkdir -p /data/complete_books && chown -R appuser:appuser /data /app
+# Create a non‑root user for security and set ownership of the app directory
+RUN useradd --create-home --shell /bin/bash appuser
+RUN mkdir -p /data/complete_books && chown -R appuser:appuser /app /data
 
 USER appuser
 
-# FastAPI + MCP SSE
+# Expose FastAPI and MCP SSE ports
 EXPOSE 8000 8001
 
 ENTRYPOINT ["/bin/bash", "start.sh"]

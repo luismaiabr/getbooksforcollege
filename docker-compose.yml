@@ -7,8 +7,8 @@ services:
     restart: unless-stopped
 
     ports:
-      - "8000:8000"   # FastAPI
-      - "8001:8001"   # MCP SSE
+      - "8080:8000"   # FastAPI  (host 8080 → container 8000; 8000 taken by quantwin)
+      - "100.101.78.95:8002:8001"   # MCP SSE (host IP 100.101.78.95 → container 8001)
 
     env_file:
       - .env
@@ -20,14 +20,15 @@ services:
     volumes:
       # Persistent book cache (PDFs, content.json, excerpts)
       - books_cache:/data/complete_books
-      # OAuth token (persisted so we don't re-auth on every restart)
-      - ./token.json:/app/token.json
-      # OAuth credentials (read-only; never changes)
+      # OAuth token — named volume so Docker never mistakenly creates it as a directory
+      - oauth_token:/app/token_store
+      # OAuth credentials (read-only; MUST exist on host before starting)
+      # Run: cp /path/to/your/credentials.json ./credentials.json
       - ./credentials.json:/app/credentials.json:ro
 
     healthcheck:
       test: ["CMD", "python3", "-c",
-             "import urllib.request; urllib.request.urlopen('http://localhost:8000/books')"]
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -35,4 +36,6 @@ services:
 
 volumes:
   books_cache:
+    driver: local
+  oauth_token:
     driver: local

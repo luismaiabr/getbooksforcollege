@@ -43,3 +43,9 @@ app = FastAPI(
 app.include_router(books.router)
 app.include_router(content.router)
 app.include_router(jobs.router)
+
+
+@app.get("/health")
+async def health():
+    """Lightweight liveness check — no Drive auth required."""
+    return {"status": "ok"}

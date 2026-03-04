@@ -7,8 +7,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-# Load .env variables (skip comments and blank lines)
-if [ -f ".env" ]; then
+# Load .env variables only for local dev runs.
+# Inside Docker the vars are injected by docker-compose env_file — no file needed.
+if [ "${DOCKER_ENV:-0}" = "1" ]; then
+    : # env already set by docker-compose
+elif [ -f ".env" ]; then
     export $(grep -v '^\s*#' .env | grep -v '^\s*$' | xargs)
 else
     echo "ERROR: .env file not found in $SCRIPT_DIR"
@@ -38,12 +41,17 @@ echo ""
 # Locally, use `poetry run` to pick up the virtualenv.
 if [ "${DOCKER_ENV:-0}" = "1" ]; then
     FASTAPI_HOST="0.0.0.0"
+    MCP_SERVER_ADDRESS="0.0.0.0"
+    # MCP server calls FastAPI internally — use loopback, not the external IP
+    BASE_URL="http://127.0.0.1:${FASTAPI_PORT}"
     RELOAD_FLAG=""
     RUN_PREFIX=""
 else
     RELOAD_FLAG="--reload"
     RUN_PREFIX="poetry run"
 fi
+
+export FASTAPI_HOST MCP_SERVER_ADDRESS BASE_URL FASTAPI_PORT
 
 # Start FastAPI
 $RUN_PREFIX uvicorn main:app \

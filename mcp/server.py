@@ -80,7 +80,9 @@ async def check_job_download(job_id: str) -> Dict[str, Any]:
         return response.json()
 
 if __name__ == "__main__":
-    # Start the SSE MCP Server using Uvicorn
-    # Make sure you are using SSE mode as FastMCP relies on stdio by default.
-    # We can programmatically run it via FastMCP's run() module.
-    mcp.run(transport="sse", host=MCP_SERVER_ADDRESS, port=MCP_SERVER_PORT)
+    # Start the SSE MCP Server.
+    # host/port are set via settings because FastMCP.run() no longer accepts
+    # them as direct kwargs for the SSE transport.
+    mcp.settings.host = MCP_SERVER_ADDRESS
+    mcp.settings.port = MCP_SERVER_PORT
+    mcp.run(transport="sse")

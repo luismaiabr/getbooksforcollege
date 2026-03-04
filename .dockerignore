@@ -28,7 +28,6 @@ token.json
 Thumbs.db
 
 # Docs and test scripts (not needed at runtime)
-README.md
 books_analysis.txt
 test_api.sh
 debug_drive.py
