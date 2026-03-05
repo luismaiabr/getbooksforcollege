@@ -41,9 +41,8 @@ echo ""
 # Locally, use `poetry run` to pick up the virtualenv.
 if [ "${DOCKER_ENV:-0}" = "1" ]; then
     FASTAPI_HOST="0.0.0.0"
+    FASTAPI_PORT="8000"
     MCP_SERVER_ADDRESS="0.0.0.0"
-    # MCP server calls FastAPI internally — use loopback, not the external IP
-    BASE_URL="http://127.0.0.1:${FASTAPI_PORT}"
     RELOAD_FLAG=""
     RUN_PREFIX=""
 else

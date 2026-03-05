@@ -49,8 +49,10 @@ const tools = [
             type: "object",
             properties: {
                 file_id: { type: "string" },
+                start: { type: "integer" },
+                end: { type: "integer" }
             },
-            required: ["file_id"],
+            required: ["file_id", "start", "end"],
         },
     },
     {
@@ -95,7 +97,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         } else if (name === "get_book_content") {
             res = await axios.get(`${API_BASE}/books/${args.file_id}/content`);
         } else if (name === "request_excerpt") {
-            res = await axios.post(`${API_BASE}/books/${args.file_id}/excerpt`);
+            res = await axios.post(`${API_BASE}/books/${args.file_id}/excerpt`, {
+                start: args.start,
+                end: args.end
+            });
         } else if (name === "check_job_status") {
             res = await axios.get(`${API_BASE}/jobs/${args.job_id}/status`);
         } else if (name === "check_job_download") {
