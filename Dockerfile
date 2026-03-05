@@ -39,7 +39,7 @@ ENV BOOKS_CACHE_DIR=/data/complete_books \
 
 # Create a non‑root user for security and set ownership of the app directory
 RUN useradd --create-home --shell /bin/bash appuser
-RUN mkdir -p /data/complete_books && chown -R appuser:appuser /app /data
+RUN mkdir -p /data/complete_books /app/token_store && chown -R appuser:appuser /app /data
 
 USER appuser
 

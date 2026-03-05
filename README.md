@@ -308,3 +308,28 @@ temp/
 - **Google Drive API** — Access is via OAuth 2.0 to allow automated renaming of the remote files.
 - **Job store** — in-memory only. Jobs are lost on server restart (excerpt PDFs remain on disk).
 - **No auth** — all routes are public. Add OAuth/JWT middleware before exposing externally.
+## Excerpts Tracking
+
+The API now includes excerpt tracking functionality to persist records of all requested excerpts.
+
+### Features
+- Save excerpt metadata (book ID, page range, studied status)
+- Query all excerpts for a specific book
+- Update study progress
+- Foreign key relationship with `renamed_books` for referential integrity
+
+### Documentation
+See [docs/excerpts_tracking.md](docs/excerpts_tracking.md) for complete API reference, examples, and integration patterns.
+
+### Quick Example
+```bash
+# Save an excerpt record
+curl -X POST http://localhost:8000/excerpts \
+  -H "Content-Type: application/json" \
+  -d '{
+    "book_id": "1AT2hniVxNJq5dFGj_jDDwh-kq071_z5N",
+    "start_page": 151,
+    "end_page": 172,
+    "has_been_studied": false
+  }'
+```

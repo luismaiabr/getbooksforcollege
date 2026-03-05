@@ -51,3 +51,34 @@ def get_all_renamed_books() -> dict[str, dict]:
             "categories": row.get("categories") or []
         }
     return result
+
+
+def save_excerpt(file_id: str, start_page: int, end_page: int, has_been_studied: bool = False) -> dict:
+    """Save a new excerpt record to Supabase and return the created record."""
+    db = get_db()
+    payload = {
+        "google_drive_file_id": file_id,
+        "start_page": start_page,
+        "end_page": end_page,
+        "has_been_studied": has_been_studied
+    }
+    response = db.table("excerpts").insert(payload).execute()
+    if not response.data:
+        raise ValueError("Failed to insert excerpt record")
+    return response.data[0]
+
+
+def get_excerpts_by_book(file_id: str) -> list[dict]:
+    """Get all excerpts for a specific book."""
+    db = get_db()
+    response = db.table("excerpts").select("*").eq("google_drive_file_id", file_id).execute()
+    return response.data
+
+
+def update_excerpt_studied_status(excerpt_id: int, has_been_studied: bool) -> dict:
+    """Update the studied status of an excerpt."""
+    db = get_db()
+    response = db.table("excerpts").update({"has_been_studied": has_been_studied}).eq("id", excerpt_id).execute()
+    if not response.data:
+        raise ValueError(f"Excerpt with id {excerpt_id} not found")
+    return response.data[0]

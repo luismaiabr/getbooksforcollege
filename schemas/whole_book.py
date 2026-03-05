@@ -32,3 +32,19 @@ class ExcerptResponse(BaseModel):
     file_url: str
     email_sent: bool
     email_error: str | None = None
+
+class SaveExcerptRequest(BaseModel):
+    book_id: str
+    start_page: int
+    end_page: int
+    has_been_studied: bool = False
+
+
+class ExcerptRecord(BaseModel):
+    id: int
+    google_drive_file_id: str
+    start_page: int
+    end_page: int
+    has_been_studied: bool
+    created_at: str
+    updated_at: str
