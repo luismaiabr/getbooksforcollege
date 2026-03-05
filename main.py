@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from routers import books, content, jobs, excerpts
+from routers import books, content, jobs, excerpts, tasks
 from services import cache, drive, pdf_processor, renamer_job, preprocessor
 
 
@@ -44,6 +44,7 @@ app.include_router(books.router)
 app.include_router(content.router)
 app.include_router(jobs.router)
 app.include_router(excerpts.router)
+app.include_router(tasks.router)
 
 
 @app.get("/health")
