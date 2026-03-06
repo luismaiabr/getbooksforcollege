@@ -5,8 +5,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from routers import books, content, jobs, excerpts, tasks
-from services import cache, drive, pdf_processor, renamer_job, preprocessor
+from routers import books, content, jobs, excerpts, tasks, roadmap
+from services import cache, drive, pdf_processor, renamer_job, preprocessor, roadmap_sync
 
 
 
@@ -25,12 +25,21 @@ async def lifespan(app: FastAPI):
     # Start the async LLM renaming loop and the async content extraction loop
     preprocessor_task = asyncio.create_task(preprocessor.content_extraction_loop())
     renamer_task = asyncio.create_task(renamer_job.renaming_loop())
+    roadmap_task = asyncio.create_task(roadmap_sync.sync_loop())
+    
+    # Start recurring task background services
+    from services import background_tasks
+    task_gen_task = asyncio.create_task(background_tasks.repeated_task_generation_service())
+    task_check_task = asyncio.create_task(background_tasks.check_repeating_tasks())
     
     yield
     
     # Teardown
     preprocessor_task.cancel()
     renamer_task.cancel()
+    roadmap_task.cancel()
+    task_gen_task.cancel()
+    task_check_task.cancel()
 
 
 app = FastAPI(
@@ -45,6 +54,7 @@ app.include_router(content.router)
 app.include_router(jobs.router)
 app.include_router(excerpts.router)
 app.include_router(tasks.router)
+app.include_router(roadmap.router)
 
 
 @app.get("/health")

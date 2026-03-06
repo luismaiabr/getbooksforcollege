@@ -6,6 +6,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import * as books from "./books.js";
 import * as tasks from "./tasks.js";
+import * as roadmap from "./roadmap.js";
 
 // Create MCP Server instance
 const server = new Server(
@@ -25,7 +26,8 @@ const API_BASE = process.env.FASTAPI_URL || "http://localhost:8000";
 
 const allTools = [
     ...books.tools,
-    ...tasks.tools
+    ...tasks.tools,
+    ...roadmap.tools
 ];
 
 // Handle tool listing
@@ -43,6 +45,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         let result = await books.handleToolCall(name, args, API_BASE);
         if (result === null) {
             result = await tasks.handleToolCall(name, args, API_BASE);
+        }
+        if (result === null) {
+            result = await roadmap.handleToolCall(name, args, API_BASE);
         }
 
         if (result === null) {

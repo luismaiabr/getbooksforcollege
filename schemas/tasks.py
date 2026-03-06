@@ -45,3 +45,24 @@ class Task(TaskBase):
 
     class Config:
         from_attributes = True
+
+class TaskEntryBase(BaseModel):
+    task_id: UUID
+    target_date: date
+    status: TaskStatus = TaskStatus.PENDING
+
+class TaskEntryCreate(TaskEntryBase):
+    pass
+
+class TaskEntry(TaskEntryBase):
+    id: UUID
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class TaskWithEntry(Task):
+    """Merged view of a task template and its entry for a specific date."""
+    entry_id: Optional[UUID] = None
+    # Use the status from the entry if it exists, otherwise use task-level (default pending)
+    entry_status: Optional[TaskStatus] = None

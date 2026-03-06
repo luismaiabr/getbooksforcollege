@@ -57,38 +57,132 @@ def _get_drive_service():
     return build("drive", "v3", credentials=creds)
 
 
-def list_books() -> list[dict]:
-    """Return all PDF books in the configured folder as [{"id": ..., "name": ...}]."""
+def find_folder_id(folder_name: str, parent_id: str) -> str:
+    """Find a folder ID by name within a parent folder. Returns None if not found."""
     service = _get_drive_service()
     query = (
-        f"'{GOOGLE_DRIVE_FOLDER_ID}' in parents"
-        " and mimeType='application/pdf'"
+        f"'{parent_id}' in parents"
+        f" and name='{folder_name}'"
+        " and mimeType='application/vnd.google-apps.folder'"
         " and trashed=false"
     )
     try:
-        results = (
+        res = service.files().list(q=query, fields="files(id, name)").execute()
+        folders = res.get("files", [])
+        if folders:
+            return folders[0]["id"]
+    except Exception as exc:
+        print(f"[Drive] Error searching for folder '{folder_name}': {exc}")
+    return None
+
+
+def list_books() -> list[dict]:
+    """Return all PDF books in the 'BOOKS' subfolder (or root if not found) as [{"id": ..., "name": ..., "folder": ...}]."""
+    # 1. Try to find the 'BOOKS' folder first
+    books_root_id = GOOGLE_DRIVE_FOLDER_ID
+    root_prefix = ""
+    
+    found_books_id = find_folder_id("BOOKS", GOOGLE_DRIVE_FOLDER_ID)
+    if found_books_id:
+        books_root_id = found_books_id
+        root_prefix = "BOOKS/"
+        print(f"[Drive] Found nested BOOKS folder (id={books_root_id})")
+
+    return list_folder_files(books_root_id, root_prefix)
+
+
+def list_folder_files(folder_id: str, prefix: str = "") -> list[dict]:
+    """List all PDFs within a folder and its subfolders. Flattened result."""
+    service = _get_drive_service()
+    
+    # 1. Get all subfolders
+    folder_query = (
+        f"'{folder_id}' in parents"
+        " and mimeType='application/vnd.google-apps.folder'"
+        " and trashed=false"
+    )
+    try:
+        folder_results = (
             service.files()
-            .list(q=query, fields="files(id, name)", pageSize=100)
+            .list(q=folder_query, fields="files(id, name)", pageSize=100)
             .execute()
         )
     except HttpError as exc:
         if exc.resp.status == 404:
-            raise FileNotFoundError(
-                f"Drive folder not found (id={GOOGLE_DRIVE_FOLDER_ID!r}). "
-                "Check GOOGLE_DRIVE_FOLDER_ID in .env."
-            ) from exc
+            raise FileNotFoundError(f"Drive folder not found (id={folder_id!r}).") from exc
         raise
-    return [
-        {"id": f["id"], "name": f["name"].removesuffix(".pdf")}
-        for f in results.get("files", [])
-    ]
+        
+    folders = folder_results.get("files", [])
+    all_files = []
+    
+    # 2. For each subfolder, get the PDFs
+    for folder in folders:
+        f_id = folder["id"]
+        f_name = f"{prefix}{folder['name']}"
+        
+        pdf_query = (
+            f"'{f_id}' in parents"
+            " and mimeType='application/pdf'"
+            " and trashed=false"
+        )
+        
+        pdf_results = (
+            service.files()
+            .list(q=pdf_query, fields="files(id, name)", pageSize=100)
+            .execute()
+        )
+        
+        for f in pdf_results.get("files", []):
+            all_files.append({
+                "id": f["id"],
+                "name": f["name"].removesuffix(".pdf"),
+                "folder": f_name
+            })
+            
+    # 3. Get PDFs directly from the folder
+    root_pdf_query = (
+        f"'{folder_id}' in parents"
+        " and mimeType='application/pdf'"
+        " and trashed=false"
+    )
+    try:
+        root_pdf_results = (
+            service.files()
+            .list(q=root_pdf_query, fields="files(id, name)", pageSize=100)
+            .execute()
+        )
+        for f in root_pdf_results.get("files", []):
+            all_files.append({
+                "id": f["id"],
+                "name": f["name"].removesuffix(".pdf"),
+                "folder": prefix.removesuffix("/") 
+            })
+    except Exception:
+        pass 
+            
+    return all_files
 
 
 def get_book_metadata(file_id: str) -> dict:
-    """Return {"id": ..., "name": ...} for a single file ID. Raises if not found."""
+    """Return {"id": ..., "name": ..., "folder": ...} for a single file ID. Raises if not found."""
     service = _get_drive_service()
-    f = service.files().get(fileId=file_id, fields="id, name").execute()
-    return {"id": f["id"], "name": f["name"].removesuffix(".pdf")}
+    f = service.files().get(fileId=file_id, fields="id, name, parents").execute()
+    
+    # Resolve the parent folder name
+    folder_name = ""
+    if "parents" in f and f["parents"]:
+        parent_id = f["parents"][0]
+        try:
+            parent_folder = service.files().get(fileId=parent_id, fields="name").execute()
+            folder_name = parent_folder.get("name", "")
+        except Exception:
+            pass # fallback to empty string if parent can't be resolved
+            
+    return {
+        "id": f["id"], 
+        "name": f["name"].removesuffix(".pdf"),
+        "folder": folder_name
+    }
 
 
 def download_book(file_id: str, dest_path: Path) -> None:

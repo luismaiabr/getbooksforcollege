@@ -13,13 +13,20 @@ async def renaming_loop():
         try:
             print("[Renamer] Checking for completely unrenamed books...")
             books = drive.list_books()
+            # Fetch all renamed books once per iteration to compare folders
+            renamed_books_map = db.get_all_renamed_books()
             
             for b in books:
                 file_id = b["id"]
                 original_drive_name = b["name"]
+                folder_name = b.get("folder", "")
                 
                 # Check Supabase to see if we already renamed this file
-                if db.is_book_renamed(file_id):
+                if file_id in renamed_books_map:
+                    db_folder = renamed_books_map[file_id].get("folder", "")
+                    if db_folder != folder_name:
+                        print(f"[Renamer] Updating folder for '{original_drive_name}' from '{db_folder}' to '{folder_name}'")
+                        db.update_book_folder(file_id, folder_name)
                     continue
                 
                 # Fetch text content (it should be pre-computed by the main lifespan task)
@@ -81,8 +88,8 @@ async def renaming_loop():
                 
                 # Save to Supabase
                 try:
-                    db.mark_book_renamed(file_id, original_drive_name, new_name, categories)
-                    print(f"[Renamer] Successfully renamed and tracked '{original_drive_name}' -> '{new_name}'")
+                    db.mark_book_renamed(file_id, original_drive_name, new_name, categories, folder_name)
+                    print(f"[Renamer] Successfully renamed and tracked '{original_drive_name}' -> '{new_name}' in folder '{folder_name}'")
                 except Exception as exc:
                     print(f"[Renamer] Failed to save status to Supabase: {exc}")
                     

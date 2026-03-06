@@ -45,7 +45,7 @@ async def analyze_book_cover(text_content: str) -> dict:
     user_prompt = f"Here is the text from the first pages of the book:\n\n{text_content[:4000]}"
     
     response = await client.chat.completions.create(
-        model="google/gemini-2.5-flash",
+        model="google/gemini-2.0-flash-001",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}

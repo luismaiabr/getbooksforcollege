@@ -54,12 +54,26 @@ export const tools = [
             },
             required: ["job_id"],
         },
+    },
+    {
+        name: "list_folder_books",
+        description: "Retrieve a list of available books in a specific folder",
+        inputSchema: {
+            type: "object",
+            properties: {
+                folder_name: { type: "string", description: "The name of the folder in the Google Drive root" }
+            },
+            required: ["folder_name"],
+        },
     }
 ];
 
 export async function handleToolCall(name, args, API_BASE) {
     let res;
     switch (name) {
+        case "list_folder_books":
+            res = await axios.get(`${API_BASE}/books/folder/${args.folder_name}`);
+            return res.data;
         case "list_books":
             res = await axios.get(`${API_BASE}/books`);
             return res.data;

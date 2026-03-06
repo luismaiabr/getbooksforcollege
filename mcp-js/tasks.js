@@ -51,6 +51,7 @@ export const tools = [
             type: "object",
             properties: {
                 task_id: { type: "string", description: "UUID of the task" },
+                target_date: { type: "string", description: "Optional ISO date (YYYY-MM-DD) for repeating task status" },
                 updates: {
                     type: "object",
                     properties: {
@@ -60,7 +61,7 @@ export const tools = [
                         status: { type: "string", enum: ["PENDING", "DONE", "NOT_FINISHED", "CANCELLED", "POSTPONED"] },
                         repeat: { type: "string", enum: ["never", "daily", "weekly", "bimonthly", "monthly"] },
                         strategy: { type: "string" },
-                        target_date: { type: "string", description: "ISO format date YYYY-MM-DD" },
+                        target_date: { type: "string", description: "Update the template target date" },
                         time_estimate_minutes: { type: "integer" },
                         external_link: { type: "string" },
                         metadata: { type: "object" }
@@ -96,7 +97,9 @@ export async function handleToolCall(name, args, API_BASE) {
             res = await axios.get(`${API_BASE}/tasks/${args.task_id}`);
             return res.data;
         case "update_task":
-            res = await axios.patch(`${API_BASE}/tasks/${args.task_id}`, args.updates);
+            // Pass target_date as query param if provided
+            const params = args.target_date ? { target_date: args.target_date } : {};
+            res = await axios.patch(`${API_BASE}/tasks/${args.task_id}`, args.updates, { params });
             return res.data;
         case "delete_task":
             res = await axios.delete(`${API_BASE}/tasks/${args.task_id}`);

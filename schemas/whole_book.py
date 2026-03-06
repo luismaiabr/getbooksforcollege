@@ -4,6 +4,7 @@ from pydantic import BaseModel
 class DriveBook(BaseModel):
     id: str
     name: str
+    folder: str | None = None
     has_been_renamed: bool = False
     categories: list[str] = []
     is_available: bool = False
