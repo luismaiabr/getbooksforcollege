@@ -50,11 +50,45 @@ Health check: `http://localhost:8080/health`
 | **View Live Logs** | `sudo docker compose logs -f bookgateway` |
 | **Check Health** | `curl -i http://localhost:8080/health` |
 
-### 3. Google Drive Authentication (Headless)
-Inside Docker, you must provide a `token.json` manually once:
-1. **Generate locally:** Run `poetry run python3 scripts/generate_token.py` on a machine with a browser.
-2. **Inject into Docker:** `docker cp token.json bookgateway:/app/token_store/token.json`
-3. **Restart:** `sudo docker compose restart bookgateway`
+### 3. Google Drive Authentication
+
+**✨ Fully Automated (Recommended)**
+
+The application now automatically triggers OAuth authentication when needed. Simply:
+
+1. **Check the Docker logs** when the app starts:
+   ```bash
+   sudo docker compose logs -f bookgateway
+   ```
+
+2. If authentication is needed, you'll see an OAuth URL in the logs like:
+   ```
+   🔐 Google Drive OAuth Authentication Required
+   ======================================================================
+   Please visit this URL in your browser to authenticate:
+   http://100.101.78.95:8080/...
+   ```
+
+3. **Click the URL**, complete the Google OAuth flow, and the token is automatically saved.
+
+4. The app continues immediately — no restart needed!
+
+**🔧 Manual Trigger (Alternative)**
+
+You can also manually trigger the OAuth flow:
+```bash
+# Run the helper script:
+./scripts/auth_google_drive.sh
+
+# Or directly:
+docker exec -it bookgateway python scripts/generate_token.py --headless
+```
+
+**📝 Old Method (Still Works)**
+
+For local development or if you prefer the old workflow:
+1. Generate locally: `python scripts/generate_token.py`
+2. Copy into Docker: `docker cp token.json bookgateway:/app/token_store/token.json`
 
 ---
 

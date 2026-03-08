@@ -9,6 +9,7 @@ services:
     ports:
       - "100.101.78.95:8002:8001"   # MCP SSE (host IP 100.101.78.95 → container 8001)
       - "100.101.78.95:8003:8000"   # FastAPI (host IP 100.101.78.95 → container 8000)
+      - "8080:8080"                   # OAuth callback (VS Code auto-forwards to local browser)
 
     env_file:
       - .env
@@ -16,6 +17,12 @@ services:
     environment:
       # Override cache path to the Docker volume mount point
       BOOKS_CACHE_DIR: /data/complete_books
+      # Signal that we're running in Docker
+      DOCKER_ENV: "1"
+      # Public IP/hostname used as the OAuth redirect URI (must be registered
+      # in Google Cloud Console → Credentials → Authorized Redirect URIs as
+      # http://100.101.78.95:8080/)
+      OAUTH_REDIRECT_HOST: "100.101.78.95"
 
     volumes:
       # Persistent book cache (PDFs and excerpts)

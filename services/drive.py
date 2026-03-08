@@ -32,9 +32,8 @@ CREDENTIALS_PATH = CREDS_DIR / "credentials.json"
 def _get_drive_service():
     """Authenticate via OAuth 2.0 to get full read/write access.
 
-    Requires a valid token.json to already exist (generated outside of Docker
-    via the one-time local setup script). Token refresh is handled automatically.
-    This function will NEVER attempt to open a browser — it is headless-safe.
+    If token is missing or invalid, automatically triggers OAuth flow in headless mode.
+    Token refresh is handled automatically for existing valid tokens.
     """
     creds = None
     if TOKEN_PATH.exists() and TOKEN_PATH.stat().st_size > 0:
@@ -47,15 +46,61 @@ def _get_drive_service():
             with open(TOKEN_PATH, "w") as token:
                 token.write(creds.to_json())
         else:
-            raise RuntimeError(
-                f"No valid Google OAuth token found at {TOKEN_PATH}.\n"
-                "Run the one-time local auth script to generate it:\n\n"
-                "  python scripts/generate_token.py\n\n"
-                "Then copy the produced token.json into the Docker volume:\n"
-                "  docker cp token.json bookgateway:/app/token_store/token.json"
-            )
+            # Token missing or invalid - trigger automated OAuth flow
+            _trigger_oauth_flow()
+            # Retry loading the token after OAuth flow completes
+            if TOKEN_PATH.exists() and TOKEN_PATH.stat().st_size > 0:
+                creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
+            else:
+                raise RuntimeError(
+                    f"OAuth flow completed but token not found at {TOKEN_PATH}. "
+                    "Please check the logs and try again."
+                )
 
     return build("drive", "v3", credentials=creds)
+
+
+def _trigger_oauth_flow():
+    """Trigger the OAuth flow to generate a new token.
+    
+    In Docker: Runs headless server and prints URL to logs.
+    Locally: Opens browser automatically.
+    """
+    try:
+        # Import here to avoid circular dependency
+        import sys
+        from pathlib import Path
+        
+        scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
+        sys.path.insert(0, str(scripts_dir))
+        
+        from generate_token import generate_token
+        
+        print("\n" + "="*70)
+        print("⚠️  Google Drive authentication required")
+        print("="*70)
+        
+        is_docker = os.getenv("DOCKER_ENV") == "1"
+        
+        if is_docker:
+            print("Running in Docker mode. Starting OAuth server...")
+            print("Please check the logs below for the authentication URL.\n")
+            generate_token(output_path=TOKEN_PATH, headless=True)
+        else:
+            print("Running in local mode. Opening browser for authentication...\n")
+            generate_token(output_path=TOKEN_PATH, headless=False)
+            
+        print("\n✅ Authentication successful!")
+        print("="*70 + "\n")
+        
+    except Exception as exc:
+        raise RuntimeError(
+            f"Failed to generate OAuth token: {exc}\n\n"
+            "Manual fallback: Run this command and follow the instructions:\n"
+            "  docker exec -it bookgateway python scripts/generate_token.py --headless\n\n"
+            "Or locally:\n"
+            "  python scripts/generate_token.py"
+        ) from exc
 
 
 def _list_drive_files(service, query: str, fields: str, page_size: int = 100) -> list[dict]:
