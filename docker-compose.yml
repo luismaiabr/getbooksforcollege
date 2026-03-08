@@ -18,7 +18,7 @@ services:
       BOOKS_CACHE_DIR: /data/complete_books
 
     volumes:
-      # Persistent book cache (PDFs, content.json, excerpts)
+      # Persistent book cache (PDFs and excerpts)
       - books_cache:/data/complete_books
       # OAuth token — named volume so Docker never mistakenly creates it as a directory
       - oauth_token:/app/token_store

@@ -1,6 +1,5 @@
 """Manages the temp/complete_books/ cache directory."""
 
-import json
 import os
 from pathlib import Path
 
@@ -20,10 +19,6 @@ def get_book_dir(book_name: str) -> Path:
 
 def get_pdf_path(book_name: str) -> Path:
     return get_book_dir(book_name) / f"{book_name}.pdf"
-
-
-def get_content_path(book_name: str) -> Path:
-    return get_book_dir(book_name) / "content.json"
 
 
 def get_excerpt_path(book_name: str, start: int, end: int) -> Path:

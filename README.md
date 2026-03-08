@@ -1,6 +1,6 @@
 # Book Gateway API
 
-A FastAPI gateway that serves PDF books stored in **Google Drive** on-demand — without permanently keeping files in memory or exposing Drive directly to clients. Books are downloaded lazily, text is extracted and cached locally, and page excerpts are generated in the background with email notifications.
+A FastAPI gateway that serves PDF books stored in **Google Drive** on-demand — without permanently keeping files in memory or exposing Drive directly to clients. Books are downloaded lazily, text is extracted on demand and stored in Supabase, and page excerpts are generated in the background with email notifications.
 
 ---
 
@@ -13,15 +13,16 @@ Client
 FastAPI (main.py)
   ├── GET  /books                         → lists Drive folder
   ├── POST /books/rename/{file_id}        → updates local name override
-  ├── GET  /books/{file_id}/content       → full text (lazy download + cache)
-  ├── GET  /books/{file_id}/content-only  → raw content.json (lazy download + cache)
+  ├── GET  /books/{file_id}/content       → full text (lazy download + Supabase)
+  ├── GET  /books/{file_id}/content-only  → raw JSON content download
   ├── POST /books/{file_id}/excerpt       → starts background job + sends email
   ├── GET  /jobs/{job_id}/status          → checks job progress
   └── GET  /jobs/{job_id}/download        → confirms excerpt is ready (no PDF bytes)
 
 Services
-  ├── drive.py          → Google Drive API (list, metadata, download by file_id)
-  ├── cache.py          → temp/ folder management + name override map
+  ├── drive.py          → Google Drive API (recursive list, metadata, download by file_id)
+  ├── cache.py          → temp/ folder management for local PDFs and excerpts
+  ├── db.py             → Supabase persistence for rename metadata and extracted content
   ├── pdf_processor.py  → text extraction (PyMuPDF) + page slicing (pypdf)
   ├── email_service.py  → SMTP email with status/download links
   └── jobs.py           → in-memory job store (pending / ready / error)
@@ -31,7 +32,7 @@ Services
 
 ## Running (Docker Compose)
 
-The recommended way to run the Book Gateway is using **Docker Compose**. This handles the FastAPI server, the MCP server, and the asynchronous background workers (for PDF processing and renaming).
+The recommended way to run the Book Gateway is using **Docker Compose**. This handles the FastAPI server, the MCP server, and the asynchronous background workers.
 
 ### 1. Build and Start
 ```bash
@@ -145,7 +146,7 @@ The API uses the following primary Pydantic models:
 
 ### `GET /books`
 
-Lists all PDF files in the configured Drive folder.
+Lists all PDF files in the configured Drive folder, including PDFs stored in nested subfolders.
 
 **Response** `200`:
 ```json
@@ -169,7 +170,7 @@ Lists all PDF files in the configured Drive folder.
 
 `has_been_renamed: true` means the book has been successfully processed by the AI and renamed in Google Drive. Books not yet processed will show `false`.
 
-`is_available: true` means `content.json` is ready locally. The API runs a **background worker on startup** that automatically downloads and processes missing books, making them available asynchronously.
+`is_available: true` means extracted content is already stored in Supabase for that book.
 
 
 ### `GET /books/{file_id}/content`
@@ -177,8 +178,8 @@ Lists all PDF files in the configured Drive folder.
 Returns the full text of the book as a structured JSON, page by page.
 
 **Lazy loading:**
-1. If `content.json` is cached → served immediately
-2. If not, the PDF is downloaded from Drive → text extracted → `content.json` saved → response returned
+1. If content is already stored in Supabase → served immediately
+2. If not, the PDF is downloaded from Drive → text extracted → content is saved in Supabase → response returned
 
 **Response** `200`:
 ```json
@@ -194,7 +195,7 @@ Returns the full text of the book as a structured JSON, page by page.
 
 ### `GET /books/{book_id}/content-only`
 
-Returns the raw `content.json` file as a downloadable JSON file. Same lazy behaviour as `/content`.
+Returns the raw extracted content as a downloadable JSON file. Same lazy behaviour as `/content`.
 
 **Response** `200`: raw JSON file download  
 **Filename:** `{Book Name}_content.json`
@@ -282,7 +283,6 @@ temp/
 └── complete_books/
     └── {Book Name}/
         ├── {Book Name}.pdf           ← full book (downloaded on demand)
-        ├── content.json              ← extracted text (generated on demand)
         └── excerpts/
             └── {start}-{end}.pdf    ← sliced PDFs
 ```

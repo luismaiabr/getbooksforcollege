@@ -57,11 +57,11 @@ export const tools = [
     },
     {
         name: "list_folder_books",
-        description: "Retrieve a list of available books in a specific folder",
+        description: "Retrieve a list of available books in a specific nested folder path",
         inputSchema: {
             type: "object",
             properties: {
-                folder_name: { type: "string", description: "The name of the folder in the Google Drive root" }
+                folder_name: { type: "string", description: "Slash-delimited folder path relative to the configured Google Drive root" }
             },
             required: ["folder_name"],
         },

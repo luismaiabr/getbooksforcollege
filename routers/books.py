@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException
 
 from schemas.whole_book import DriveBook
-from services import cache, drive, db
+from services import db, drive
 
 router = APIRouter(prefix="/books", tags=["books"])
 
@@ -16,14 +16,14 @@ async def list_books():
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Drive error: {exc}") from exc
 
-    renamed_books = db.get_all_renamed_books()
+    tracked_books = db.get_tracked_books()
     result = []
     
     for b in books:
         file_id = b["id"]
         # If the file hasn't been renamed by the AI yet, just use the original Drive name
-        db_meta = renamed_books.get(file_id, {})
-        has_been_renamed = file_id in renamed_books
+        db_meta = tracked_books.get(file_id, {})
+        has_been_renamed = db_meta.get("has_been_renamed", False)
         categories = db_meta.get("categories", [])
         
         # Name is strictly what's on Drive now
@@ -34,8 +34,7 @@ async def list_books():
         if folder == "" and db_meta and "folder" in db_meta:
             folder = db_meta.get("folder", "")
 
-        content_path = cache.get_content_path(name)
-        is_available = content_path.exists() and content_path.stat().st_size > 0
+        is_available = db_meta.get("has_content", False)
         
         result.append(
             DriveBook(
@@ -50,32 +49,31 @@ async def list_books():
     return result
 
 
-@router.get("/folder/{folder_name}", response_model=list[DriveBook])
-async def list_books_in_folder(folder_name: str):
-    """Return all PDF books inside a specific top-level folder name."""
-    root_id = drive.GOOGLE_DRIVE_FOLDER_ID
-    folder_id = drive.find_folder_id(folder_name, root_id)
+@router.get("/folder/{folder_path:path}", response_model=list[DriveBook])
+async def list_books_in_folder(folder_path: str):
+    """Return all PDF books inside a specific slash-delimited folder path."""
+    folder_id = drive.find_folder_by_path(folder_path)
     if not folder_id:
-        raise HTTPException(status_code=404, detail=f"Folder '{folder_name}' not found in root.")
+        raise HTTPException(status_code=404, detail=f"Folder '{folder_path}' not found in root.")
 
     try:
-        books = drive.list_folder_files(folder_id, prefix=f"{folder_name}/")
+        books = drive.list_folder_files(folder_id, prefix=folder_path.strip("/"))
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Drive error: {exc}") from exc
 
     # Reuse the same logic as the main list_books for metadata
-    renamed_books = db.get_all_renamed_books()
+    tracked_books = db.get_tracked_books()
     result = []
     
     for b in books:
         file_id = b["id"]
-        db_meta = renamed_books.get(file_id, {})
-        has_been_renamed = file_id in renamed_books
+        db_meta = tracked_books.get(file_id, {})
+        has_been_renamed = db_meta.get("has_been_renamed", False)
         categories = db_meta.get("categories", [])
         name = b["name"]
         folder = b.get("folder", "")
         
-        is_available = cache.get_content_path(name).exists()
+        is_available = db_meta.get("has_content", False)
         
         result.append(
             DriveBook(

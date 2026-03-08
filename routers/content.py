@@ -1,16 +1,16 @@
 """Router for /books/{file_id}/content and /books/{file_id}/excerpt."""
 
+import asyncio
 import json
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, BackgroundTasks, HTTPException
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from fastapi.responses import Response
 
 from schemas.whole_book import Book, PageContent, ExcerptRequest, ExcerptResponse
-from services import cache, drive, email_service, jobs as job_store, pdf_processor
+from services import cache, db, drive, email_service, jobs as job_store, pdf_processor
 from services.jobs import JobStatus
 
 load_dotenv()
@@ -20,30 +20,25 @@ BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 router = APIRouter(prefix="/books", tags=["content"])
 
 
-def _resolve(file_id: str) -> tuple[str, Path, Path]:
-    """Resolve file_id → (book_name, pdf_path, content_path). Raises HTTPException on error."""
+def _resolve(file_id: str) -> tuple[str, str, Path]:
+    """Resolve file_id → (book_name, folder_name, pdf_path). Raises HTTPException on error."""
     try:
         meta = drive.get_book_metadata(file_id)
     except Exception as exc:
         raise HTTPException(status_code=404, detail=f"Book ID '{file_id}' not found in Drive: {exc}") from exc
     book_name = meta["name"]
-    return book_name, cache.get_pdf_path(book_name), cache.get_content_path(book_name)
+    folder_name = meta.get("folder", "")
+    return book_name, folder_name, cache.get_pdf_path(book_name)
 
 
-# ── GET /books/{file_id}/content ─────────────────────────────────────────────
+def _to_page_models(content: list[dict]) -> list[PageContent]:
+    return [PageContent.model_validate(page) for page in content]
 
-@router.get("/{file_id}/content", response_model=Book)
-async def get_content(file_id: str):
-    """
-    Return full text of the book, page by page.
-    Uses cached content.json if available; otherwise downloads from Drive,
-    extracts text, and caches the result.
-    """
-    book_name, pdf_path, content_path = _resolve(file_id)
 
-    if content_path.exists() and content_path.stat().st_size > 0:
-        data = json.loads(content_path.read_text(encoding="utf-8"))
-        return Book(**data)
+async def _get_or_extract_content(file_id: str, book_name: str, folder_name: str, pdf_path: Path) -> list[dict]:
+    stored_content = db.get_book_content(file_id)
+    if stored_content is not None:
+        return stored_content
 
     if not pdf_path.exists() or pdf_path.stat().st_size == 0:
         try:
@@ -52,11 +47,31 @@ async def get_content(file_id: str):
             raise HTTPException(status_code=502, detail=f"Drive download error: {exc}") from exc
 
     try:
-        pages: list[PageContent] = pdf_processor.build_content_json(book_name, pdf_path, content_path)
+        loop = asyncio.get_running_loop()
+        content = await loop.run_in_executor(None, pdf_processor.extract_book_content, pdf_path)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"PDF processing error: {exc}") from exc
 
-    return Book(pages=pages)
+    try:
+        db.save_book_content(file_id, book_name, folder_name, content)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Database error: {exc}") from exc
+
+    return content
+
+
+# ── GET /books/{file_id}/content ─────────────────────────────────────────────
+
+@router.get("/{file_id}/content", response_model=Book)
+async def get_content(file_id: str):
+    """
+    Return full text of the book, page by page.
+    Uses Supabase content if available; otherwise downloads from Drive,
+    extracts text, stores it in Supabase, and returns it.
+    """
+    book_name, folder_name, pdf_path = _resolve(file_id)
+    content = await _get_or_extract_content(file_id, book_name, folder_name, pdf_path)
+    return Book(pages=_to_page_models(content))
 
 
 # ── GET /books/{book_id}/content-only ────────────────────────────────────────
@@ -64,28 +79,18 @@ async def get_content(file_id: str):
 @router.get("/{book_id}/content-only")
 async def get_content_only(book_id: str):
     """
-    Return the raw content.json file for download.
-    Lazy: if content.json doesn't exist, downloads the PDF from Drive,
-    extracts text, generates content.json, then serves it.
+    Return the raw book content JSON for download.
+    Lazy: if content is not stored in Supabase yet, downloads the PDF from Drive,
+    extracts text, stores it in Supabase, then serves it.
     """
-    book_name, pdf_path, content_path = _resolve(book_id)
+    book_name, folder_name, pdf_path = _resolve(book_id)
+    content = await _get_or_extract_content(book_id, book_name, folder_name, pdf_path)
+    payload = json.dumps({"pages": content}, ensure_ascii=False, indent=2)
 
-    if not (content_path.exists() and content_path.stat().st_size > 0):
-        if not pdf_path.exists() or pdf_path.stat().st_size == 0:
-            try:
-                drive.download_book(book_id, pdf_path)
-            except Exception as exc:
-                raise HTTPException(status_code=502, detail=f"Drive download error: {exc}") from exc
-
-        try:
-            pdf_processor.build_content_json(book_name, pdf_path, content_path)
-        except Exception as exc:
-            raise HTTPException(status_code=500, detail=f"PDF processing error: {exc}") from exc
-
-    return FileResponse(
-        path=str(content_path),
+    return Response(
+        content=payload,
         media_type="application/json",
-        filename=f"{book_name}_content.json",
+        headers={"Content-Disposition": f'attachment; filename="{book_name}_content.json"'},
     )
 
 

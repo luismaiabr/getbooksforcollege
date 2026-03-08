@@ -64,7 +64,7 @@ echo "[FastAPI] started (PID $FASTAPI_PID)"
 sleep 2
 
 # Start MCP SSE server
-$RUN_PREFIX python3 mcp/server.py &
+node mcp-js/index.js &
 MCP_PID=$!
 echo "[MCP]     started (PID $MCP_PID)"
 

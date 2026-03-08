@@ -6,6 +6,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         libglib2.0-0 \
         curl \
+        nodejs \
+        npm \
+        tesseract-ocr \
+        poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry – try system /usr/bin/poetry first, otherwise install via the official installer
@@ -32,6 +36,9 @@ RUN poetry install --only main --no-root
 
 # Copy the rest of the source code
 COPY . .
+
+# Install MCP server JS dependencies
+RUN cd mcp-js && npm install
 
 # Environment for the app – tell start.sh we are inside Docker
 ENV BOOKS_CACHE_DIR=/data/complete_books \

@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from routers import books, content, jobs, excerpts, tasks, roadmap
-from services import cache, drive, pdf_processor, renamer_job, preprocessor, roadmap_sync
+from services import drive, renamer_job, roadmap_sync
 
 
 
@@ -22,8 +22,7 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         print(f"Failed to authenticate with Google Drive: {exc}")
 
-    # Start the async LLM renaming loop and the async content extraction loop
-    preprocessor_task = asyncio.create_task(preprocessor.content_extraction_loop())
+    # Start the async background services.
     renamer_task = asyncio.create_task(renamer_job.renaming_loop())
     roadmap_task = asyncio.create_task(roadmap_sync.sync_loop())
     
@@ -35,7 +34,6 @@ async def lifespan(app: FastAPI):
     yield
     
     # Teardown
-    preprocessor_task.cancel()
     renamer_task.cancel()
     roadmap_task.cancel()
     task_gen_task.cancel()

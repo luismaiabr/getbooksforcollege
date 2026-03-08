@@ -1,7 +1,6 @@
 """PDF text extraction and page-slicing utilities."""
 
 import io
-import json
 from pathlib import Path
 
 import fitz  # PyMuPDF
@@ -9,24 +8,56 @@ from pypdf import PdfReader, PdfWriter
 
 from schemas.whole_book import PageContent
 
+# If average extracted words per page falls below this threshold,
+# the PDF is treated as a scanned image and OCR is applied.
+_OCR_WORDS_THRESHOLD = 20
 
-def extract_text(pdf_path: Path) -> list[PageContent]:
-    """Extract text from every page of a PDF using PyMuPDF."""
+
+def apply_ocr_to_pdf(pdf_path: Path) -> list[PageContent]:
+    """Convert PDF pages to images and extract text via Tesseract OCR."""
+    from pdf2image import convert_from_path  # deferred – only needed for scanned PDFs
+    import pytesseract
+
+    images = convert_from_path(str(pdf_path))
+    pages: list[PageContent] = []
+    for i, image in enumerate(images, start=1):
+        text = pytesseract.image_to_string(image)
+        text = text.replace("\x00", "")  # Postgres does not support null bytes
+        pages.append(PageContent(page=i, text=text))
+    return pages
+
+
+def extract_text(pdf_path: Path) -> tuple[list[PageContent], bool]:
+    """Extract text from every page of a PDF.
+
+    Attempts standard PyMuPDF extraction first.  If the average words per
+    page is below *_OCR_WORDS_THRESHOLD*, falls back to Tesseract OCR.
+
+    Returns:
+        A tuple of (pages, ocr_was_used).
+    """
     doc = fitz.open(str(pdf_path))
     pages: list[PageContent] = []
     for i, page in enumerate(doc, start=1):
         text = page.get_text()
+        text = text.replace("\x00", "")  # Postgres does not support null bytes
         pages.append(PageContent(page=i, text=text))
     doc.close()
-    return pages
+
+    if pages:
+        avg_words = sum(len(p.text.split()) for p in pages) / len(pages)
+        print(f"[PDF Processor] Extracted an average of {avg_words:.2f} words per page.")
+        if avg_words < _OCR_WORDS_THRESHOLD:
+            print(f"[PDF Processor] Average {avg_words:.2f} is below the threshold of {_OCR_WORDS_THRESHOLD}. Applying OCR...")
+            return apply_ocr_to_pdf(pdf_path), True
+
+    return pages, False
 
 
-def build_content_json(book_name: str, pdf_path: Path, content_path: Path) -> list[PageContent]:
-    """Extract text from PDF, write content.json, and return the pages list."""
-    pages = extract_text(pdf_path)
-    data = {"pages": [p.model_dump() for p in pages]}
-    content_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    return pages
+def extract_book_content(pdf_path: Path) -> tuple[list[dict], bool]:
+    """Extract text from PDF and return (JSON-serializable page list, ocr_used)."""
+    pages, ocr_used = extract_text(pdf_path)
+    return [page.model_dump() for page in pages], ocr_used
 
 
 def slice_pdf(pdf_path: Path, start: int, end: int) -> io.BytesIO:

@@ -1,8 +1,8 @@
 """Background job for synchronizing and parsing Teaching Roadmaps using an LLM."""
 
 import asyncio
-import json
-from services import drive, db, cache, llm, pdf_processor
+
+from services import cache, db, drive, llm, pdf_processor
 
 async def sync_loop():
     """ Runs every 12 hours (or on startup) to check for teaching plans, analyze them, and store them in Supabase. """
@@ -11,14 +11,12 @@ async def sync_loop():
     while True:
         try:
             print("[RoadmapSync] Checking for PDFs in PLANOS_DE_ENSINO...")
-            # Use root folder ID as base, but we search for the specific folder
-            root_id = drive.GOOGLE_DRIVE_FOLDER_ID
-            folder_id = drive.find_folder_id("PLANOS_DE_ENSINO", root_id)
+            folder_id = drive.find_folder_by_path("PLANOS_DE_ENSINO")
             
             if not folder_id:
                 print("[RoadmapSync] PLANOS_DE_ENSINO folder not found. Skipping.")
             else:
-                plans = drive.list_folder_files(folder_id, prefix="PLANOS_DE_ENSINO/")
+                plans = drive.list_folder_files(folder_id, prefix="PLANOS_DE_ENSINO")
                 
                 # Fetch existing teaching roadmaps from DB to check if we already parsed this file
                 # Assuming supabase table 'teaching_roadmap'
@@ -37,34 +35,28 @@ async def sync_loop():
                         
                     print(f"[RoadmapSync] Processing new teaching plan: '{file_name}'")
                     
-                    # Ensure we have the text content locally
+                    # Ensure we have the PDF locally, then extract content transiently.
                     local_name = file_name
-                    content_path = cache.get_content_path(local_name)
-                    
-                    if not (content_path.exists() and content_path.stat().st_size > 0):
-                        pdf_path = cache.get_pdf_path(local_name)
-                        if not pdf_path.exists() or pdf_path.stat().st_size == 0:
-                            try:
-                                drive.download_book(file_id, pdf_path)
-                            except Exception as exc:
-                                print(f"[RoadmapSync] Download error for {file_name}: {exc}")
-                                continue
-                        
+                    pdf_path = cache.get_pdf_path(local_name)
+                    if not pdf_path.exists() or pdf_path.stat().st_size == 0:
                         try:
-                            # Parse PDF
-                            loop = asyncio.get_running_loop()
-                            await loop.run_in_executor(
-                                None, 
-                                pdf_processor.build_content_json, 
-                                local_name, pdf_path, content_path
-                            )
+                            drive.download_book(file_id, pdf_path)
                         except Exception as exc:
-                            print(f"[RoadmapSync] PDF parse error for {file_name}: {exc}")
+                            print(f"[RoadmapSync] Download error for {file_name}: {exc}")
                             continue
 
+                    try:
+                        loop = asyncio.get_running_loop()
+                        pages = await loop.run_in_executor(
+                            None,
+                            pdf_processor.extract_book_content,
+                            pdf_path,
+                        )
+                    except Exception as exc:
+                        print(f"[RoadmapSync] PDF parse error for {file_name}: {exc}")
+                        continue
+
                     # Read all pages of text to send to the LLM
-                    data = json.loads(content_path.read_text(encoding="utf-8"))
-                    pages = data.get("pages", [])
                     # Text from all pages (teaching plans are usually short, 3-10 pages)
                     full_text = "\n\n".join([p["text"] for p in pages])
                     
