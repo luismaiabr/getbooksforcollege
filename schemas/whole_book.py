@@ -51,6 +51,7 @@ class ExcerptRecord(BaseModel):
     has_been_studied: bool
     how_many_times_reviewd: int = 0
     resource_link: str | None = None
+    summary: str | None = None
     created_at: str
     updated_at: str
 

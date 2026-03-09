@@ -158,6 +158,7 @@ def save_excerpt(
     has_been_studied: bool = False,
     resource_link: str | None = None,
     how_many_times_reviewd: int = 0,
+    summary: str | None = None,
 ) -> dict:
     """Save a new excerpt record to Supabase and return the created record."""
     db = get_db()
@@ -169,6 +170,8 @@ def save_excerpt(
         "resource_link": resource_link,
         "how_many_times_reviewd": how_many_times_reviewd,
     }
+    if summary is not None:
+        payload["summary"] = summary
     response = db.table("excerpts").insert(payload).execute()
     if not response.data:
         raise ValueError("Failed to insert excerpt record")

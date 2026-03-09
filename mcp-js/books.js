@@ -65,6 +65,17 @@ export const tools = [
             },
             required: ["folder_name"],
         },
+    },
+    {
+        name: "get_book_excerpts",
+        description: "Get all excerpts (with summaries) for a specific book",
+        inputSchema: {
+            type: "object",
+            properties: {
+                book_id: { type: "string", description: "The Google Drive file ID of the book" }
+            },
+            required: ["book_id"],
+        },
     }
 ];
 
@@ -91,6 +102,9 @@ export async function handleToolCall(name, args, API_BASE) {
             return res.data;
         case "check_job_download":
             res = await axios.get(`${API_BASE}/jobs/${args.job_id}/download`);
+            return res.data;
+        case "get_book_excerpts":
+            res = await axios.get(`${API_BASE}/excerpts/${args.book_id}`);
             return res.data;
         default:
             return null;

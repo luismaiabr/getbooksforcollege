@@ -10,7 +10,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException
 from fastapi.responses import Response
 
 from schemas.whole_book import Book, PageContent, ExcerptRequest, ExcerptResponse
-from services import cache, db, drive, email_service, jobs as job_store, pdf_processor
+from services import cache, db, drive, email_service, jobs as job_store, pdf_processor, summary_service
 from services.jobs import JobStatus
 
 load_dotenv()
@@ -48,7 +48,7 @@ async def _get_or_extract_content(file_id: str, book_name: str, folder_name: str
 
     try:
         loop = asyncio.get_running_loop()
-        content = await loop.run_in_executor(None, pdf_processor.extract_book_content, pdf_path)
+        content, _ = await loop.run_in_executor(None, pdf_processor.extract_book_content, pdf_path)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"PDF processing error: {exc}") from exc
 
@@ -117,10 +117,10 @@ def _run_excerpt_job(job_id: str, file_id: str, book_name: str, start: int, end:
 @router.post("/{file_id}/excerpt", response_model=ExcerptResponse)
 async def get_excerpt(file_id: str, body: ExcerptRequest, background_tasks: BackgroundTasks):
     """
-    Start background excerpt generation. Sends email immediately with progress
-    and download links, and returns those same links in the response.
+    Start background excerpt generation. Generates a summary from the excerpt
+    text, sends email with summary, saves everything to DB, and returns links.
     """
-    book_name, _, _ = _resolve(file_id)
+    book_name, folder_name, pdf_path = _resolve(file_id)
 
     job_id = book_name
     job_store.create_or_reset(job_id)
@@ -131,6 +131,19 @@ async def get_excerpt(file_id: str, body: ExcerptRequest, background_tasks: Back
 
     background_tasks.add_task(_run_excerpt_job, job_id, file_id, book_name, body.start, body.end)
 
+    # Generate summary from the book content for the requested pages
+    summary = ""
+    try:
+        content = await _get_or_extract_content(file_id, book_name, folder_name, pdf_path)
+        # content is list[dict] with keys "page" (1-indexed) and "text"
+        excerpt_pages = [p for p in content if isinstance(p, dict) and body.start <= p.get("page", 0) <= body.end]
+        excerpt_text = "\n\n".join(p.get("text", "") for p in excerpt_pages)
+        if excerpt_text.strip():
+            summary = await summary_service.generate_excerpt_summary(excerpt_text)
+            print(f"[Excerpt] Generated summary for '{book_name}' pages {body.start}-{body.end}")
+    except Exception as exc:
+        print(f"[Excerpt] Summary generation failed for '{book_name}': {exc}")
+
     # Automatically save to excerpts table
     try:
         db.save_excerpt(
@@ -139,19 +152,20 @@ async def get_excerpt(file_id: str, body: ExcerptRequest, background_tasks: Back
             end_page=body.end,
             has_been_studied=False,
             resource_link=file_url,
-            how_many_times_reviewd=0
+            how_many_times_reviewd=0,
+            summary=summary or None,
         )
     except Exception as exc:
         print(f"Failed to auto-save excerpt to DB: {exc}")
 
     try:
-
         email_service.send_excerpt_email(
             book_name=book_name,
             start=body.start,
             end=body.end,
             status_url=status_url,
             file_url=file_url,
+            summary=summary,
         )
         email_error = None
     except Exception as exc:  # noqa: BLE001

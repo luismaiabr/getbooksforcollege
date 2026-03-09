@@ -22,12 +22,21 @@ def send_excerpt_email(
     end: int,
     status_url: str,
     file_url: str,
+    summary: str = "",
 ) -> None:
     """Send an email with progress and download links for the requested excerpt."""
     msg = MIMEMultipart("alternative")
     msg["Subject"] = f"📚 Excerpt ready: {book_name} (pages {start}–{end})"
     msg["From"] = SMTP_USER
     msg["To"] = TARGET_EMAIL
+
+    summary_html = ""
+    if summary:
+        summary_html = f"""
+  <div style="margin:20px 0;padding:16px;background:#f4f6fa;border-left:4px solid #1a73e8;border-radius:4px">
+    <h3 style="margin:0 0 8px 0;font-size:1em;color:#1a73e8">📝 Summary</h3>
+    <p style="margin:0;color:#333;font-size:0.95em">{summary}</p>
+  </div>"""
 
     html = f"""\
 <html>
@@ -36,7 +45,7 @@ def send_excerpt_email(
   <p style="color:#555;margin-top:0">{book_name} &mdash; pages {start}–{end}</p>
 
   <p>Your excerpt is being generated in the background.</p>
-
+{summary_html}
   <p>🔄 <a href="{status_url}" style="color:#555">Check progress</a></p>
 
   <div style="margin:28px 0">
@@ -58,8 +67,13 @@ def send_excerpt_email(
 </body>
 </html>"""
 
+    summary_plain = ""
+    if summary:
+        summary_plain = f"\nSummary:\n{summary}\n"
+
     plain = (
         f"Book excerpt requested: {book_name} (pages {start}–{end})\n\n"
+        f"{summary_plain}"
         f"Progress: {status_url}\n"
         f"Download PDF: {file_url}\n"
     )
