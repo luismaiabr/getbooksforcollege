@@ -131,7 +131,21 @@ async def get_excerpt(file_id: str, body: ExcerptRequest, background_tasks: Back
 
     background_tasks.add_task(_run_excerpt_job, job_id, file_id, book_name, body.start, body.end)
 
+    # Automatically save to excerpts table
     try:
+        db.save_excerpt(
+            file_id=file_id,
+            start_page=body.start,
+            end_page=body.end,
+            has_been_studied=False,
+            resource_link=file_url,
+            how_many_times_reviewd=0
+        )
+    except Exception as exc:
+        print(f"Failed to auto-save excerpt to DB: {exc}")
+
+    try:
+
         email_service.send_excerpt_email(
             book_name=book_name,
             start=body.start,

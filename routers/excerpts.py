@@ -47,9 +47,12 @@ async def save_excerpt(request: SaveExcerptRequest):
             file_id=request.book_id,
             start_page=request.start_page,
             end_page=request.end_page,
-            has_been_studied=request.has_been_studied
+            has_been_studied=request.has_been_studied,
+            resource_link=request.resource_link,
+            how_many_times_reviewd=request.how_many_times_reviewd,
         )
         return ExcerptRecord(**record)
+
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Database error: {exc}") from exc
 
@@ -74,3 +77,16 @@ async def update_studied_status(excerpt_id: int, has_been_studied: bool):
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Database error: {exc}") from exc
+
+
+@router.patch("/{excerpt_id}/review_count", response_model=ExcerptRecord)
+async def update_review_count(excerpt_id: int, count: int):
+    """Update the review count of an excerpt."""
+    try:
+        record = db.update_excerpt_review_count(excerpt_id, count)
+        return ExcerptRecord(**record)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Database error: {exc}") from exc
+

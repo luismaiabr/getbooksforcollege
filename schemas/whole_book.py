@@ -39,6 +39,8 @@ class SaveExcerptRequest(BaseModel):
     start_page: int
     end_page: int
     has_been_studied: bool = False
+    resource_link: str | None = None
+    how_many_times_reviewd: int = 0
 
 
 class ExcerptRecord(BaseModel):
@@ -47,5 +49,8 @@ class ExcerptRecord(BaseModel):
     start_page: int
     end_page: int
     has_been_studied: bool
+    how_many_times_reviewd: int = 0
+    resource_link: str | None = None
     created_at: str
     updated_at: str
+

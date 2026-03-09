@@ -151,19 +151,29 @@ def get_all_renamed_books() -> dict[str, dict]:
     return result
 
 
-def save_excerpt(file_id: str, start_page: int, end_page: int, has_been_studied: bool = False) -> dict:
+def save_excerpt(
+    file_id: str,
+    start_page: int,
+    end_page: int,
+    has_been_studied: bool = False,
+    resource_link: str | None = None,
+    how_many_times_reviewd: int = 0,
+) -> dict:
     """Save a new excerpt record to Supabase and return the created record."""
     db = get_db()
     payload = {
         "google_drive_file_id": file_id,
         "start_page": start_page,
         "end_page": end_page,
-        "has_been_studied": has_been_studied
+        "has_been_studied": has_been_studied,
+        "resource_link": resource_link,
+        "how_many_times_reviewd": how_many_times_reviewd,
     }
     response = db.table("excerpts").insert(payload).execute()
     if not response.data:
         raise ValueError("Failed to insert excerpt record")
     return response.data[0]
+
 
 
 def get_excerpts_by_book(file_id: str) -> list[dict]:
@@ -180,3 +190,13 @@ def update_excerpt_studied_status(excerpt_id: int, has_been_studied: bool) -> di
     if not response.data:
         raise ValueError(f"Excerpt with id {excerpt_id} not found")
     return response.data[0]
+
+
+def update_excerpt_review_count(excerpt_id: int, review_count: int) -> dict:
+    """Update the review count of an excerpt."""
+    db = get_db()
+    response = db.table("excerpts").update({"how_many_times_reviewd": review_count}).eq("id", excerpt_id).execute()
+    if not response.data:
+        raise ValueError(f"Excerpt with id {excerpt_id} not found")
+    return response.data[0]
+

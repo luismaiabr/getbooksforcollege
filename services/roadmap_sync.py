@@ -1,6 +1,7 @@
 """Background job for synchronizing and parsing Teaching Roadmaps using an LLM."""
 
 import asyncio
+import json
 
 from services import cache, db, drive, llm, pdf_processor
 
@@ -47,7 +48,7 @@ async def sync_loop():
 
                     try:
                         loop = asyncio.get_running_loop()
-                        pages = await loop.run_in_executor(
+                        pages, _ = await loop.run_in_executor(
                             None,
                             pdf_processor.extract_book_content,
                             pdf_path,
@@ -91,7 +92,8 @@ async def sync_loop():
                         try:
                             supabase.table("teaching_roadmap").upsert(payload, on_conflict="file_id, lesson_title, date_of_lesson").execute()
                         except Exception as exc:
-                            print(f"[RoadmapSync] DB Insert error for lesson {lesson['lesson_title']}: {exc}")
+                            print(f"[RoadmapSync] DB upsert error for lesson '{lesson['lesson_title']}': {type(exc).__name__}: {exc}")
+                            print(f"[RoadmapSync] Payload was: {payload}")
                             
                     print(f"[RoadmapSync] Successfully processed '{file_name}'")
                     
@@ -142,7 +144,13 @@ async def analyze_teaching_plan(text_content: str, file_name: str, file_id: str)
         )
         
         raw_content = response.choices[0].message.content
-        return json.loads(raw_content)
+        print(f"[RoadmapSync] LLM raw response for '{file_name}': {raw_content[:300]}...")
+        parsed = json.loads(raw_content)
+        print(f"[RoadmapSync] Parsed {len(parsed.get('lessons', []))} lessons from LLM response for '{file_name}'")
+        return parsed
+    except json.JSONDecodeError as e:
+        print(f"[RoadmapSync] JSON parse error for {file_name}: {e}. Raw content: {raw_content[:500]}")
+        return {}
     except Exception as e:
-        print(f"Error calling LLM for {file_name}: {e}")
+        print(f"[RoadmapSync] LLM call error for {file_name}: {type(e).__name__}: {e}")
         return {}
